@@ -17,13 +17,14 @@ use ReflectionClass;
 use ReflectionClassConstant;
 use ReflectionFunction;
 use ReflectionMethod;
+use ReflectionParameter;
 use ReflectionProperty;
 
 /**
  * Reads attribute instances declared on a reflected class, method, property,
- * constant, or function. Implementations decide whether — and how — a
- * result is reused across calls; `ReflectionAttributeReader` does not, while
- * `CachedAttributeReader` decorates one to add that.
+ * constant, function, or parameter. Implementations decide whether — and
+ * how — a result is reused across calls; `ReflectionAttributeReader` does
+ * not, while `CachedAttributeReader` decorates one to add that.
  */
 interface AttributeReader
 {
@@ -38,7 +39,7 @@ interface AttributeReader
 	 * @return   list<T>
 	 */
 	public function attributesOn(
-		ReflectionClass|ReflectionMethod|ReflectionProperty|ReflectionClassConstant|ReflectionFunction $target,
+		ReflectionClass|ReflectionMethod|ReflectionProperty|ReflectionClassConstant|ReflectionFunction|ReflectionParameter $target,
 		string $attributeClass,
 		int $flags = 0
 	): array;

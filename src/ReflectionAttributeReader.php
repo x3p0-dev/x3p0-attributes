@@ -18,6 +18,7 @@ use ReflectionClass;
 use ReflectionClassConstant;
 use ReflectionFunction;
 use ReflectionMethod;
+use ReflectionParameter;
 use ReflectionProperty;
 
 /**
@@ -32,7 +33,7 @@ final class ReflectionAttributeReader implements AttributeReader
 	 * @inheritDoc
 	 */
 	public function attributesOn(
-		ReflectionClass|ReflectionMethod|ReflectionProperty|ReflectionClassConstant|ReflectionFunction $target,
+		ReflectionClass|ReflectionMethod|ReflectionProperty|ReflectionClassConstant|ReflectionFunction|ReflectionParameter $target,
 		string $attributeClass,
 		int $flags = 0
 	): array {

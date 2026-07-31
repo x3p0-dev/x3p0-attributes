@@ -17,7 +17,9 @@ use DateInterval;
 use ReflectionClass;
 use ReflectionClassConstant;
 use ReflectionFunction;
+use ReflectionFunctionAbstract;
 use ReflectionMethod;
+use ReflectionParameter;
 use ReflectionProperty;
 use stdClass;
 use X3P0\Attributes\Cache\ArrayCache;
@@ -56,7 +58,7 @@ final class CachedAttributeReader implements AttributeReader
 	 * @throws InvalidArgumentException
 	 */
 	public function attributesOn(
-		ReflectionClass|ReflectionMethod|ReflectionProperty|ReflectionClassConstant|ReflectionFunction $target,
+		ReflectionClass|ReflectionMethod|ReflectionProperty|ReflectionClassConstant|ReflectionFunction|ReflectionParameter $target,
 		string $attributeClass,
 		int $flags = 0
 	): array {
@@ -80,7 +82,7 @@ final class CachedAttributeReader implements AttributeReader
 	 * regardless of what `Cache` implementation is in use.
 	 */
 	private function key(
-		ReflectionClass|ReflectionMethod|ReflectionProperty|ReflectionClassConstant|ReflectionFunction $target,
+		ReflectionClass|ReflectionMethod|ReflectionProperty|ReflectionClassConstant|ReflectionFunction|ReflectionParameter $target,
 		string $attributeClass,
 		int $flags
 	): string {
@@ -92,11 +94,28 @@ final class CachedAttributeReader implements AttributeReader
 	 * cache.
 	 */
 	private function identify(
-		ReflectionClass|ReflectionMethod|ReflectionProperty|ReflectionClassConstant|ReflectionFunction $target
+		ReflectionClass|ReflectionMethod|ReflectionProperty|ReflectionClassConstant|ReflectionFunction|ReflectionParameter $target
 	): string {
 		return match (true) {
 			$target instanceof ReflectionClass, $target instanceof ReflectionFunction => $target->getName(),
+			$target instanceof ReflectionParameter => sprintf(
+				'%s($%s:%d)',
+				$this->identifyFunction($target->getDeclaringFunction()),
+				$target->getName(),
+				$target->getPosition()
+			),
 			default => "{$target->class}::{$target->getName()}",
 		};
+	}
+
+	/**
+	 * A stable string identity for a parameter's declaring function or
+	 * method, used to key the cache.
+	 */
+	private function identifyFunction(ReflectionFunctionAbstract $function): string
+	{
+		return $function instanceof ReflectionMethod
+			? "{$function->class}::{$function->getName()}"
+			: $function->getName();
 	}
 }
