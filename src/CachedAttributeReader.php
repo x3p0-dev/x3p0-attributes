@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace X3P0\Attributes;
 
 use DateInterval;
+use ReflectionAttribute;
 use ReflectionClass;
 use ReflectionClassConstant;
 use ReflectionFunction;
@@ -27,9 +28,10 @@ use X3P0\Attributes\Cache\Cache;
 use X3P0\Attributes\Cache\InvalidArgumentException;
 
 /**
- * Decorates another `AttributeReader`, caching each call's result by target,
- * attribute class, and flags so a repeated read of the same combination
- * returns the same instances instead of reconstructing them.
+ * Reads attribute instances straight off PHP's reflection API, caching each
+ * call's result by target, attribute class, and flags so a repeated read of
+ * the same combination returns the same instances instead of reconstructing
+ * them.
  */
 final class CachedAttributeReader implements AttributeReader
 {
@@ -41,13 +43,7 @@ final class CachedAttributeReader implements AttributeReader
 	 */
 	private static ?stdClass $miss = null;
 
-	/**
-	 * Decorates `$reader` with a cache, so a repeated call for the same
-	 * target, attribute class, and flags is served from `$cache` instead
-	 * of reflecting `$reader` again.
-	 */
 	public function __construct(
-		private readonly AttributeReader $reader,
 		private readonly Cache $cache = new ArrayCache(),
 		private readonly null|int|DateInterval $ttl = null
 	) {
@@ -68,12 +64,27 @@ final class CachedAttributeReader implements AttributeReader
 		$value = $this->cache->get($key, $miss);
 
 		if ($value === $miss) {
-			$value = $this->reader->attributesOn($target, $attributeClass, $flags);
+			$value = $this->read($target, $attributeClass, $flags);
 
 			$this->cache->set($key, $value, $this->ttl);
 		}
 
 		return $value;
+	}
+
+	/**
+	 * Constructs a fresh instance of `$attributeClass` for every matching
+	 * attribute declared on `$target`.
+	 */
+	private function read(
+		ReflectionClass|ReflectionMethod|ReflectionProperty|ReflectionClassConstant|ReflectionFunction|ReflectionParameter $target,
+		string $attributeClass,
+		int $flags
+	): array {
+		return array_map(
+			fn (ReflectionAttribute $attribute): object => $attribute->newInstance(),
+			$target->getAttributes($attributeClass, $flags)
+		);
 	}
 
 	/**
